@@ -8,19 +8,9 @@ let app1 = new Vue({
 			showProduct: true,
 			searchValue: "",
 			sortOrder: "ascending",
-			phoneError: "",
+			phoneError: "", // Added to store phone validation error messages
 			order: {
-					firstname: "", 
-					lastname: "", 
-					address: "", 
-					city: "", 
-					state: "", 
-					phone: "", 
-					method: "Home", 
-					gift: false, 
-					sendGift: 'Yes', 
-					dontSendGift: 'No'
-					// Remove cart from here - we'll add it when sending
+					firstname: "", lastname: "", address: "", city: "", state: "", phone: "", method: "Home", gift: false, sendGift: 'Yes', dontSendGift: 'No'
 			}                       
 		}
 	},
@@ -39,137 +29,117 @@ let app1 = new Vue({
 							this.showProduct = true;
 					}
 			},
-			cartCount(id){
-					let count = 0;
-					for (let i = 0; i < this.cart.length; i++) {
-							if (this.cart[i] === id) {
-									count++;
+			cartCount(id)
+					{
+							let count = 0;
+							for (let i = 0; i < this.cart.length; i++)
+							{
+									if (this.cart[i] === id)
+									{
+											count ++
+									}
 							}
-					}
-					return count;
-			},
+							return count;
+					},
 			submitCheckOut(){
-					alert('Check-out completed successfully');
+					alert('Check-out completed successfully')
 			},
 			removeItemFromCart(subject){
 					let index = this.cart.indexOf(subject.id);
 					this.cart.splice(index, 1);
 			},
 			search(){
-					let searchValueTemp = this.searchValue;
-					if (!searchValueTemp) {
-							// If search is empty, reload all subjects
-							this.loadAllSubjects();
-							return;
-					}
-					
-					fetch(`https://course-booking-back-end.onrender.com/search/${searchValueTemp}`)
-							.then(response => {
-									if (!response.ok) {
-											throw new Error(`Search failed: ${response.status} ${response.statusText}`);
-									}
-									return response.json();
-							})
+					let searchValueTemp = this.searchValue
+					fetch(`http://localhost:3000/search/${searchValueTemp}`)
+							.then(response => response.json())
 							.then(json => {
 									this.subjects = json;
 							})
 							.catch(error => {
 									console.error("Error fetching data:", error);
-									alert("Search failed. Please try again.");
 							});
+					
 			},
+			// Fixed phone validation function
 			verifyPhone(){
-					// Fix the phone validation - access order.phone properly
-					if (!/^(?:\+230)?(2\d{6}|5\d{7})$/.test(this.order.phone)) {
-							this.phoneError = "Please enter a valid phone number";
-							return false;
-					} else {
-							this.phoneError = "";
-							return true;
-					}
+				// Make sure we're using the order.phone property, not this.phone
+				const phoneNumber = this.order.phone.toString();
+				
+				// Regex for Mauritius phone numbers: 
+				// - Optional +230 prefix
+				// - Starting with 2 (followed by 6 digits) or 5 (followed by 7 digits)
+				const maurPhoneRegex = /^(?:\+230)?(2\d{6}|5\d{7})$/;
+				
+				if (!maurPhoneRegex.test(phoneNumber)) {
+					this.phoneError = "Please enter a valid Mauritius phone number";
+					return false;
+				} else {
+					this.phoneError = "";
+					return true;
+				}
 			},
 			sendOrder(){
-					// Verify phone first
-					if (!this.verifyPhone()) {
-							alert("Please enter a valid phone number");
-							return;
+				// First verify the phone number
+				if (!this.verifyPhone()) {
+					alert(this.phoneError);
+					return; // Stop form submission if phone is invalid
+				}
+				
+				const orderWithCart = {
+					...this.order,
+					cart: [...this.cart]
+				};
+			
+				console.log(orderWithCart);
+				fetch("http://localhost:3000/checkout", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify(orderWithCart)
+				}).then((res)=>{
+					if (res.ok) {
+						alert("Order Completed");
+						// Clear cart and reset form after successful order
+						this.cart = [];
+						this.resetForm();
+						this.showProduct = true; // Return to product page
+					} else {
+						alert("Order Failed");
 					}
-					
-					// Check for required fields
-					if (!this.order.firstname || !this.order.lastname) {
-							alert("Please fill in your name");
-							return;
-					}
-					
-					// Create order object with cart
-					const orderWithCart = {
-							...this.order,
-							cart: [...this.cart]
-					};
-					
-					console.log("Sending order:", orderWithCart);
-					
-					fetch("https://course-booking-back-end.onrender.com/checkout", {
-							method: "POST",
-							headers: {
-									"Content-Type": "application/json",
-							},
-							body: JSON.stringify(orderWithCart)
-					})
-					.then(res => {
-							if (!res.ok) {
-									throw new Error(`Order failed: ${res.status} ${res.statusText}`);
-							}
-							return res.json();
-					})
-					.then(data => {
-							alert(`Order Completed! Your order ID is: ${data.orderId}`);
-							// Clear cart and return to home page
-							this.cart = [];
-							this.showProduct = true;
-							// Reset order form
-							this.resetOrderForm();
-					})
-					.catch(error => {
-							console.error("Order error:", error);
-							alert("Order Failed: " + error.message);
-					});
+				}).catch(error => {
+					console.error("Order error:", error);
+					alert("Order Failed: " + error.message);
+				});
 			},
-			resetOrderForm() {
-					this.order = {
-							firstname: "", 
-							lastname: "", 
-							address: "", 
-							city: "", 
-							state: "", 
-							phone: "", 
-							method: "Home", 
-							gift: false, 
-							sendGift: 'Yes', 
-							dontSendGift: 'No'
-					};
-			},
-			loadAllSubjects() {
-					fetch("https://course-booking-back-end.onrender.com/collections1/Subjects")
-							.then(response => {
-									if (!response.ok) {
-											throw new Error(`Failed to load subjects: ${response.status} ${response.statusText}`);
-									}
-									return response.json();
-							})
-							.then(json => {
-									this.subjects = json;
-									console.log("Loaded subjects:", this.subjects.length);
-							})
-							.catch(error => {
-									console.error("Error fetching subjects:", error);
-									alert("Failed to load subjects. Please refresh the page.");
-							});
+			// Added method to reset the form after successful order
+			resetForm() {
+				this.order = {
+					firstname: "", 
+					lastname: "", 
+					address: "", 
+					city: "", 
+					state: "", 
+					phone: "", 
+					method: "Home", 
+					gift: false, 
+					sendGift: 'Yes', 
+					dontSendGift: 'No'
+				};
+				this.phoneError = "";
 			}
 	},
 
 	created: function() {
-			this.loadAllSubjects();
+			fetch("http://localhost:3000/collections1/Subjects")
+					.then(response => response.json())
+					.then(json => {
+							this.subjects = json; 
+							console.log(this.subjects);
+					})
+					.catch(error => {
+							console.error("Error fetching data:", error);
+					});
 	},
 	computed:{
 			itemInCart: function(){
@@ -209,38 +179,6 @@ let app1 = new Vue({
 					});
 					
 					return sortedArray;
-			},
-			// Add a computed property to show cart items with counts
-			cartItemsWithCount() {
-					const itemMap = {};
-					
-					// Count items in cart
-					this.cart.forEach(id => {
-							if (!itemMap[id]) {
-									// Find the subject details
-									const subject = this.subjects.find(s => s.id === id);
-									if (subject) {
-											itemMap[id] = {
-													id: id,
-													name: subject.name,
-													count: 1,
-													price: subject.price
-											};
-									}
-							} else {
-									itemMap[id].count++;
-							}
-					});
-					
-					return Object.values(itemMap);
-			},
-			// Calculate total price
-			cartTotal() {
-					let total = 0;
-					this.cartItemsWithCount.forEach(item => {
-							total += item.price * item.count;
-					});
-					return total.toFixed(2);
 			}
 	}
 });
