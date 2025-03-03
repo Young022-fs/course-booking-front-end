@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://unpkg.com/vue@2.7.8/dist/vue.js"></script>
+    <script src="https://kit.fontawesome.com/5327233004.js"></script>
+    <script src="subjects.js"></script>
+    <script src="app.js" defer></script>
+    <link rel="stylesheet" href="styles.css" />
+    <title>Document</title>
+  </head>
+  <body>
+    <main id="vue-app">
+      <h1 class="mainHead">Lesson Booking System</h1>
+      <button v-if="showProduct" class="cart" @click="showCheckout">
+        <p class="cartCount">{{itemInCart}}</p>
+        <i class="fa-solid fa-cart-shopping"></i>
+        <p>Checkout</p>
+      </button>
+      <button v-else class="cart homeButton" @click="showCheckout">
+        Back to Home
+      </button>
+      <div v-if="showProduct">
+        <nav class="nav">
+          <label>
+            Search Lessons
+            <input type="text" name="lessonSearch" v-model="searchValue" @input="search"/>
+          </label>
+          <label>
+            Sort By:
+            <select name="sort" id="sort" v-model="sortAttribute">
+              <option value="" disabled>Sort By</option>
+              <option value="subject">Subject</option>
+              <option value="location">Location</option>
+              <option value="price">Price</option>
+              <option value="availability">Availability</option>
+            </select>
+          </label>
+          <label>
+            Display Order:
+            <select name="order" id="order" v-model="sortOrder">
+              <option value="ascending">Ascending</option>
+              <option value="descending">Descending</option>
+            </select>
+          </label>
+        </nav>
+        <section class="subjectsContainer">
+          <div v-for="subject in sortedSubjects">
+            <div class="subject">
+              <i :class="subject.icon"></i>
+              <h2 class="subjectName">{{subject.name}}</h2>
+              <p>Location: {{subject.location}}</p>
+              <p>Price: {{subject.price}}</p>
+              <p>Available slots: {{subject.availableInventory}}</p>
+
+              <button
+                id="addButton"
+                v-if="canAddToCart(subject)"
+                @click="addItemToCart(subject)"
+              >
+                Add to Cart
+              </button>
+              <button id="addButton" v-else :disabled="true">
+                Add to Cart
+              </button>
+
+              <span v-if="subject.availableInventory === cartCount(subject.id)"
+                >All out!</span
+              >
+              <span
+                v-else-if="subject.availableInventory - cartCount(subject.id) < 5"
+              >
+                Only {{subject.availableInventory - cartCount(subject.id)}}
+                left!
+              </span>
+              <span v-else>Buy now!</span>
+            </div>
+          </div>
+        </section>
+      </div>
+      <div v-else>
+        <h1>Welcome to the Checkout Page</h1>
+        <label>
+          First Name
+          <input v-model.trim="order.firstname" />
+        </label><br/>
+        <label>
+          Last Name
+          <input v-model.trim="order.lastname" />
+        </label><br/>
+        <label> Address: <input v-model="order.address" /> </label>
+        <label> City: <input v-model="order.city" /> </label>
+        <label>
+          State:
+          <select v-model="order.state">
+            <option disabled value="">State</option>
+            <option>Flacq</option>
+            <option>Port Louis</option>
+            <option>Pamplemousses</option>
+            <option>Riviere du Rempart</option>
+            <option>Plaines Wilhems</option>
+            <option>Quatre Bornes</option>
+          </select>
+        </label><br/>
+        <label> Phone: <input  @input="verifyPhone" v-model.number="order.phone" /> </label>
+        <p>
+          <input
+            type="checkbox"
+            id="gift"
+            value="true"
+            v-model="order.gift"
+            v-bind:true-value="order.sendGift"
+            v-bind:false-value="order.dontSendGift"
+          />
+          <label for="gift">Ship As Gift?</label>
+        </p>
+        <p>
+          <input type="radio" id="home" value="Home" v-model="order.method" />
+          <label for="home">Home</label>
+          <input
+            type="radio"
+            id="business"
+            value="Business"
+            v-model="order.method"
+          />
+          <label for="business">Business</label>
+        </p>
+
+        <h2>Order Information</h2>
+        <p>First Name: {{order.firstname}}</p>
+        <p>Last Name: {{order.lastname}}</p>
+        <p>Address: {{order.address}}</p>
+        <p>City: {{order.city}}</p>
+        <p>State: {{order.state}}</p>
+        <p>Phone: {{order.phone}}</p>
+        <p>Ship as a gift: {{order.gift}}</p>
+        <p>Home Delivery: {{order.method}}</p>
+        <button @click="sendOrder">Place Order</button>
+      </div>
+    </main>
+  </body>
+</html>
