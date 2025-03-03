@@ -63,7 +63,7 @@ let app1 = new Vue({
 							return;
 					}
 					
-					fetch(`http://localhost:3000/search/${searchValueTemp}`)
+					fetch(`https://course-booking-back-end.onrender.com/search/${searchValueTemp}`)
 							.then(response => {
 									if (!response.ok) {
 											throw new Error(`Search failed: ${response.status} ${response.statusText}`);
@@ -109,7 +109,7 @@ let app1 = new Vue({
 					
 					console.log("Sending order:", orderWithCart);
 					
-					fetch("http://localhost:3000/checkout", {
+					fetch("https://course-booking-back-end.onrender.com/checkout", {
 							method: "POST",
 							headers: {
 									"Content-Type": "application/json",
@@ -150,7 +150,7 @@ let app1 = new Vue({
 					};
 			},
 			loadAllSubjects() {
-					fetch("http://localhost:3000/collections1/Subjects")
+					fetch("https://course-booking-back-end.onrender.com/collections1/Subjects")
 							.then(response => {
 									if (!response.ok) {
 											throw new Error(`Failed to load subjects: ${response.status} ${response.statusText}`);
